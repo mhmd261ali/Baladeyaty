@@ -16,6 +16,12 @@ export default defineType({
       title: 'Description',
     }),
     defineField({
+      name: 'image',
+      type: 'image',
+      title: 'Image',
+      options: {hotspot: true},
+    }),
+    defineField({
       name: 'document',
       type: 'file',
       title: 'Document',
@@ -36,4 +42,10 @@ export default defineType({
       title: 'Info Status',
     }),
   ],
+  preview: {
+    select: {
+      title: 'title',
+      media: 'image',
+    },
+  },
 })

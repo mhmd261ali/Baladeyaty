@@ -1,7 +1,7 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Building2, Menu, X, LogOut } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Building2, Menu, X, LogOut } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -9,10 +9,10 @@ const Navbar = () => {
   const { user, logout } = useAuth();
 
   const navItems = [
-    { path: '/', label: 'الرئيسية' },
-    { path: '/complaint', label: 'تقديم شكوى' },
-    { path: '/suggestion', label: 'تقديم مقترح' },
-    { path: '/info', label: 'التعاميم والمشاريع' },
+    { path: "/info", label: "التعاميم والمشاريع" },
+    { path: "/suggestion", label: "تقديم مقترح" },
+    { path: "/complaint", label: "تقديم شكوى" },
+    { path: "/", label: "الرئيسية" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -20,11 +20,16 @@ const Navbar = () => {
   return (
     <nav className="bg-white shadow-md border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex flex-row-reverse justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 rtl:space-x-reverse">
+          <Link
+            to="/"
+            className="flex items-center space-x-2 rtl:space-x-reverse"
+          >
             <Building2 className="h-8 w-8 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">بلديتك الذكية</span>
+            <span className="text-xl font-bold text-gray-900">
+              بلديتك الذكية
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -35,8 +40,8 @@ const Navbar = () => {
                 to={item.path}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
                   isActive(item.path)
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                    ? "bg-blue-100 text-blue-700"
+                    : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
                 }`}
               >
                 {item.label}
@@ -54,9 +59,7 @@ const Navbar = () => {
                 >
                   لوحة التحكم
                 </Link>
-                <div className="text-sm text-gray-700">
-                  مرحباً، {user.name}
-                </div>
+                <div className="text-sm text-gray-700">مرحباً، {user.name}</div>
                 <button
                   onClick={logout}
                   className="text-gray-500 hover:text-gray-700 p-1"
@@ -81,7 +84,11 @@ const Navbar = () => {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="text-gray-500 hover:text-gray-700 p-2"
             >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </button>
           </div>
         </div>
@@ -97,8 +104,8 @@ const Navbar = () => {
                   onClick={() => setIsMenuOpen(false)}
                   className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
                     isActive(item.path)
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                      ? "bg-blue-100 text-blue-700"
+                      : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
                   }`}
                 >
                   {item.label}

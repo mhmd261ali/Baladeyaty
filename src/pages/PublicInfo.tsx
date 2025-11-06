@@ -5,27 +5,18 @@ import {
   Download,
   Eye,
   Search,
-  Filter,
   ListFilter,
   ArrowRight,
   Sparkles,
 } from "lucide-react";
 import { motion, Variants } from "framer-motion";
+import useGetAllInfo from "../api-hooks/useGetAllBlogs"; // <-- from previous step
+import type { Info } from "../types";
 
-// --- Types
-interface DocumentItem {
-  id: string;
-  title: string;
-  type: "circular" | "project" | "announcement";
-  date: string; // ISO
-  summary: string;
-  downloadUrl?: string;
-  status?: "active" | "completed" | "planning";
-}
+// If your fetch adds "documentUrl": document.asset->url, extend the type locally:
+type InfoWithUrl = Info & { documentUrl?: string };
 
-type TabKey = "all" | "circular" | "project" | "announcement";
-
-// --- Motion variants (typed, tween-based to avoid TS mismatches)
+// --- Motion variants (typed, tween-based)
 const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 14 },
   show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
@@ -39,146 +30,111 @@ const listContainer: Variants = {
   },
 };
 
+// Optional helpers to color/label by category & status
+const getCategoryLabel = (cat?: string) => {
+  // Map your categories to Arabic labels if needed
+  switch ((cat || "").toLowerCase()) {
+    case "circular":
+    case "تعميم":
+      return "تعميم";
+    case "project":
+    case "مشروع":
+      return "مشروع";
+    case "announcement":
+    case "إعلان":
+      return "إعلان";
+    default:
+      return cat || "غير مصنّف";
+  }
+};
+
+const getCategoryColor = (cat?: string) => {
+  switch ((cat || "").toLowerCase()) {
+    case "circular":
+    case "تعميم":
+      return "bg-sky-100 text-sky-800";
+    case "project":
+    case "مشروع":
+      return "bg-emerald-100 text-emerald-800";
+    case "announcement":
+    case "إعلان":
+      return "bg-violet-100 text-violet-800";
+    default:
+      return "bg-slate-100 text-slate-800";
+  }
+};
+
+const getStatusLabel = (status?: string) => {
+  switch ((status || "").toLowerCase()) {
+    case "active":
+    case "جاري":
+    case "جاري التنفيذ":
+      return "جاري التنفيذ";
+    case "completed":
+    case "مكتمل":
+      return "مكتمل";
+    case "planning":
+    case "قيد التخطيط":
+      return "قيد التخطيط";
+    default:
+      return status || "";
+  }
+};
+
+const getStatusColor = (status?: string) => {
+  switch ((status || "").toLowerCase()) {
+    case "active":
+    case "جاري":
+    case "جاري التنفيذ":
+      return "bg-amber-100 text-amber-800";
+    case "completed":
+    case "مكتمل":
+      return "bg-emerald-100 text-emerald-800";
+    case "planning":
+    case "قيد التخطيط":
+      return "bg-sky-100 text-sky-800";
+    default:
+      return "bg-slate-100 text-slate-800";
+  }
+};
+
 const PublicInfo: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabKey>("all");
+  const [activeTab, setActiveTab] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const documents: DocumentItem[] = [
-    {
-      id: "1",
-      title: "تعميم بشأن تنظيم مواقف السيارات في المناطق التجارية",
-      type: "circular",
-      date: "2025-01-15",
-      summary:
-        "تعميم جديد لتنظيم استخدام مواقف السيارات في المناطق التجارية وتحديد الرسوم والأوقات المسموحة",
-      downloadUrl: "#",
-    },
-    {
-      id: "2",
-      title: "مشروع تطوير الحديقة المركزية",
-      type: "project",
-      date: "2025-01-10",
-      summary:
-        "مشروع شامل لتطوير وتجديد الحديقة المركزية يشمل إضافة ألعاب أطفال وممرات مشي ومناطق جلوس",
-      status: "active",
-    },
-    {
-      id: "3",
-      title: "إعلان عن مناقصة صيانة الطرق الداخلية",
-      type: "announcement",
-      date: "2025-01-08",
-      summary:
-        "إعلان عن طرح مناقصة عامة لصيانة وإصلاح الطرق الداخلية في الأحياء السكنية",
-      downloadUrl: "#",
-    },
-    {
-      id: "4",
-      title: "تعميم بشأن تنظيف الشوارع والأرصفة",
-      type: "circular",
-      date: "2025-01-05",
-      summary:
-        "تعميم يوضح الجدولة الجديدة لتنظيف الشوارع والأرصفة والتزامات المواطنين",
-      downloadUrl: "#",
-    },
-    {
-      id: "5",
-      title: "مشروع تحسين شبكة الإضاءة العامة",
-      type: "project",
-      date: "2025-01-01",
-      summary:
-        "مشروع لاستبدال وتحديث شبكة الإضاءة العامة بتقنية LED الموفرة للطاقة",
-      status: "planning",
-    },
-    {
-      id: "6",
-      title: "إعلان عن المهرجان البلدي السنوي",
-      type: "announcement",
-      date: "2024-12-28",
-      summary:
-        "إعلان عن تنظيم المهرجان البلدي السنوي وفعالياته المتنوعة للمجتمع",
-      downloadUrl: "#",
-    },
-  ];
-
-  const getTypeLabel = (type: DocumentItem["type"]) => {
-    switch (type) {
-      case "circular":
-        return "تعميم";
-      case "project":
-        return "مشروع";
-      case "announcement":
-        return "إعلان";
-    }
-  };
-
-  const getTypeColor = (type: DocumentItem["type"]) => {
-    switch (type) {
-      case "circular":
-        return "bg-sky-100 text-sky-800";
-      case "project":
-        return "bg-emerald-100 text-emerald-800";
-      case "announcement":
-        return "bg-violet-100 text-violet-800";
-    }
-  };
-
-  const getStatusLabel = (status?: DocumentItem["status"]) => {
-    switch (status) {
-      case "active":
-        return "جاري التنفيذ";
-      case "completed":
-        return "مكتمل";
-      case "planning":
-        return "قيد التخطيط";
-      default:
-        return "";
-    }
-  };
-
-  const getStatusColor = (status?: DocumentItem["status"]) => {
-    switch (status) {
-      case "active":
-        return "bg-amber-100 text-amber-800";
-      case "completed":
-        return "bg-emerald-100 text-emerald-800";
-      case "planning":
-        return "bg-sky-100 text-sky-800";
-      default:
-        return "";
-    }
-  };
-
-  const tabs: { id: TabKey; label: string; count: number }[] = useMemo(
-    () => [
-      { id: "all", label: "الكل", count: documents.length },
-      {
-        id: "circular",
-        label: "التعاميم",
-        count: documents.filter((d) => d.type === "circular").length,
-      },
-      {
-        id: "project",
-        label: "المشاريع",
-        count: documents.filter((d) => d.type === "project").length,
-      },
-      {
-        id: "announcement",
-        label: "الإعلانات",
-        count: documents.filter((d) => d.type === "announcement").length,
-      },
-    ],
-    [documents]
+  // Hook: fetch from Sanity with typing
+  const { infoList, loading, error } = useGetAllInfo(
+    searchTerm,
+    activeTab === "all" ? "" : activeTab
   );
 
-  const filteredDocuments = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    return documents.filter((doc) => {
-      const matchesTab = activeTab === "all" || doc.type === activeTab;
-      const inTitle = doc.title.toLowerCase().includes(term);
-      const inSummary = doc.summary.toLowerCase().includes(term);
-      return matchesTab && (!term || inTitle || inSummary);
+  // Build tabs dynamically from categories in data
+  const tabs: { id: string; label: string; count: number }[] = useMemo(() => {
+    const categories = new Map<string, number>();
+    (infoList as InfoWithUrl[]).forEach((i) => {
+      const key = i.info_category || "غير مصنّف";
+      categories.set(key, (categories.get(key) || 0) + 1);
     });
-  }, [activeTab, searchTerm, documents]);
+
+    const catTabs = Array.from(categories.entries()).map(([id, count]) => ({
+      id,
+      label: getCategoryLabel(id),
+      count,
+    }));
+
+    const total = (infoList as InfoWithUrl[]).length;
+    return [{ id: "all", label: "الكل", count: total }, ...catTabs];
+  }, [infoList]);
+
+  // Local search (title/description) + tab filter already applied by hook’s query on category
+  const filtered = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    return (infoList as InfoWithUrl[]).filter((i) => {
+      const inTitle = i.title?.toLowerCase().includes(term);
+      const inDesc = i.description?.toLowerCase().includes(term);
+      return !term || inTitle || inDesc;
+    });
+  }, [infoList, searchTerm]);
 
   return (
     <div
@@ -194,20 +150,20 @@ const PublicInfo: React.FC = () => {
           className="text-center mb-10"
         >
           <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-4 py-2 text-sm mb-4 shadow/50">
-            <Sparkles className="h-4 w-4" /> أحدث التعاميم والمشاريع
+            <Sparkles className="h-4 w-4" /> أحدث المعلومات والوثائق
           </div>
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-100 to-fuchsia-100">
             <FileText className="h-8 w-8 text-sky-600" />
           </div>
           <h1 className="text-3xl md:text-4xl font-extrabold mb-2">
-            التعاميم والمشاريع
+            المعلومات والوثائق
           </h1>
           <p className="text-slate-600 max-w-2xl mx-auto">
-            تابع آخر التعاميم والمشاريع والإعلانات الخاصة بالبلدية
+            تابع آخر الوثائق، التعاميم، المشاريع والإعلانات
           </p>
         </motion.div>
 
-        {/* Search & quick filters */}
+        {/* Search & counts */}
         <motion.div
           variants={fadeInUp}
           initial="hidden"
@@ -219,7 +175,7 @@ const PublicInfo: React.FC = () => {
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
               <input
                 type="text"
-                placeholder="البحث في التعاميم والمشاريع..."
+                placeholder="البحث في العناوين والوصف..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pr-10 pl-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
@@ -229,10 +185,14 @@ const PublicInfo: React.FC = () => {
               <ListFilter className="h-4 w-4" />
               <span>
                 <span className="font-semibold">النتائج:</span>{" "}
-                {filteredDocuments.length}
+                {filtered.length}
               </span>
             </div>
           </div>
+          {loading && <p className="mt-3 text-slate-500">...جاري التحميل</p>}
+          {error && (
+            <p className="mt-3 text-red-600">حدث خطأ أثناء الجلب: {error}</p>
+          )}
         </motion.div>
 
         {/* Tabs */}
@@ -280,11 +240,21 @@ const PublicInfo: React.FC = () => {
           animate="show"
           className="space-y-6"
         >
-          {filteredDocuments.map((doc) => (
-            <motion.article key={doc.id} variants={fadeInUp}>
+          {filtered.map((doc) => (
+            <motion.article key={doc._id} variants={fadeInUp}>
               <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 hover:shadow-lg transition">
                 <div className="p-6">
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    {(doc as any).imageUrl && (
+                      <div className="w-full md:w-40 shrink-0">
+                        <img
+                          src={(doc as any).imageUrl}
+                          alt={(doc as any).imageAlt || doc.title}
+                          className="w-full h-28 object-cover rounded-xl ring-1 ring-slate-200"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-3 gap-3">
                         <h3 className="text-lg font-bold leading-tight text-slate-900">
@@ -292,46 +262,43 @@ const PublicInfo: React.FC = () => {
                         </h3>
                         <div className="flex flex-col items-end gap-2 shrink-0">
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${getTypeColor(
-                              doc.type
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(
+                              doc.info_category
                             )}`}
                           >
-                            {getTypeLabel(doc.type)}
+                            {getCategoryLabel(doc.info_category)}
                           </span>
-                          {doc.status && (
+                          {doc.info_status && (
                             <span
                               className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                                doc.status
+                                doc.info_status
                               )}`}
                             >
-                              {getStatusLabel(doc.status)}
+                              {getStatusLabel(doc.info_status)}
                             </span>
                           )}
                         </div>
                       </div>
 
                       <p className="text-slate-600 mb-4 leading-relaxed">
-                        {doc.summary}
+                        {doc.description}
                       </p>
 
                       <div className="flex items-center text-sm text-slate-500 mb-4">
                         <Calendar className="h-4 w-4 ml-2" />
-                        {new Date(doc.date).toLocaleDateString("ar-SA")}
+                        {doc.info_date}
                       </div>
 
                       <div className="flex flex-wrap gap-3">
-                        <button className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 text-white px-3 py-2 text-sm font-medium hover:brightness-110">
-                          <Eye className="h-4 w-4" />
-                          عرض التفاصيل
-                          <ArrowRight className="h-4 w-4" />
-                        </button>
-                        {doc.downloadUrl && (
+                        {(doc as InfoWithUrl).documentUrl && (
                           <a
-                            href={doc.downloadUrl}
+                            href={(doc as InfoWithUrl).documentUrl}
                             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+                            target="_blank"
+                            rel="noopener noreferrer"
                           >
-                            <Download className="h-4 w-4" />
-                            تحميل الملف
+                            <Eye className="h-4 w-4" />
+                            عرض الملف
                           </a>
                         )}
                       </div>
@@ -342,14 +309,14 @@ const PublicInfo: React.FC = () => {
             </motion.article>
           ))}
 
-          {filteredDocuments.length === 0 && (
+          {filtered.length === 0 && !loading && (
             <motion.div variants={fadeInUp} className="text-center py-12">
               <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-slate-900 mb-2">
                 لا توجد نتائج
               </h3>
               <p className="text-slate-600">
-                لم يتم العثور على أي تعاميم أو مشاريع تطابق البحث الخاص بك
+                لم يتم العثور على أي عناصر تطابق البحث الخاص بك
               </p>
             </motion.div>
           )}

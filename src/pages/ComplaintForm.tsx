@@ -11,12 +11,13 @@ import {
 import { FaIdCard } from "react-icons/fa";
 import { motion, Variants } from "framer-motion";
 import toast from "react-hot-toast";
+import { client } from "../lib/sanityClient";
 
 interface ComplaintData {
   type: string;
   location: string;
   description: string;
-  idNumber: string;
+  fullName: string; // بدّلنا idNumber -> fullName
   phone: string;
   priority: "low" | "medium" | "high";
 }
@@ -40,12 +41,45 @@ const ComplaintForm: React.FC = () => {
     type: "",
     location: "",
     description: "",
-    idNumber: "",
+    fullName: "", // جديد
     phone: "",
     priority: "medium",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+
+  const MAX_FILES = 6; // tweak as you like
+  const MAX_SIZE_MB = 8; // per file
+
+  const handlePhotosChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const images = files.filter((f) => f.type.startsWith("image/"));
+
+    if (!images.length) return;
+
+    // size + count guards
+    const tooBig = images.find((f) => f.size > MAX_SIZE_MB * 1024 * 1024);
+    if (tooBig) {
+      toast.error(`حجم الصورة أكبر من ${MAX_SIZE_MB}MB: ${tooBig.name}`);
+      return;
+    }
+    const combined = [...photos, ...images].slice(0, MAX_FILES);
+    setPhotos(combined);
+
+    // previews
+    const urls = combined.map((f) => URL.createObjectURL(f));
+    setPreviews(urls);
+  };
+
+  // optional: remove a single photo
+  const removePhotoAt = (idx: number) => {
+    const next = photos.filter((_, i) => i !== idx);
+    setPhotos(next);
+    setPreviews(next.map((f) => URL.createObjectURL(f)));
+  };
 
   const complaintTypes = useMemo(
     () => [
@@ -76,46 +110,86 @@ const ComplaintForm: React.FC = () => {
     /^(\+?\d{7,15})$/.test(v.replace(/\s|-/g, ""));
   const validId = (v: string) => /^\d{6,20}$/.test(v.trim());
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (
       !formData.type ||
       !formData.location ||
       !formData.description ||
-      !formData.idNumber ||
+      !formData.fullName ||
       !formData.phone
     ) {
       toast.error("يرجى ملء جميع الحقول المطلوبة");
       return;
     }
 
+    if (formData.fullName.trim().length < 3) {
+      toast.error("يرجى إدخال الاسم الكامل بشكل صحيح");
+      return;
+    }
     if (!validPhone(formData.phone)) {
       toast.error("صيغة رقم الهاتف غير صحيحة");
       return;
     }
 
-    if (!validId(formData.idNumber)) {
-      toast.error("صيغة رقم الهوية غير صحيحة");
-      return;
+    try {
+      setIsSubmitting(true);
+
+      // 1) Upload photos (if any) to Sanity and get asset refs
+      const uploadedAssets = await Promise.all(
+        photos.map(async (file) => {
+          // NOTE: uploads require write permissions; best done server-side with a token.
+          const asset = await client.assets.upload("image", file, {
+            filename: file.name,
+            contentType: file.type,
+          });
+          return {
+            _type: "image",
+            asset: { _type: "reference", _ref: asset._id },
+          };
+        })
+      );
+
+      // 2) Create complaint doc with images array
+      const complaintId = `COMP-${Date.now()}`;
+      const complaintDoc = {
+        _type: "Complaints",
+        complaint: complaintId,
+        priority: formData.priority,
+        complaint_status: "new",
+        complaint_date: new Date().toISOString().split("T")[0],
+        complaint_category: formData.type,
+        complaint_place: formData.location,
+        complaint_description: formData.description,
+        complaint_name: formData.fullName,
+        complaint_person_nbr: formData.phone,
+        complaint_images: uploadedAssets, // 👈 NEW
+      };
+
+      const created = await client.create(complaintDoc);
+
+      toast.success(
+        `تم تقديم الشكوى بنجاح. رقم الشكوى: ${complaintId} (ID: ${created._id})`
+      );
+
+      // reset
+      setFormData({
+        type: "",
+        location: "",
+        description: "",
+        fullName: "",
+        phone: "",
+        priority: "medium",
+      });
+      setPhotos([]);
+      setPreviews([]);
+    } catch (err) {
+      console.error("Error saving complaint to Sanity:", err);
+      toast.error("حدث خطأ أثناء حفظ الشكوى. حاول مجددًا.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    const complaintId = `COMP-${Date.now()}`;
-    toast.success(`تم تقديم الشكوى بنجاح. رقم الشكوى: ${complaintId}`);
-
-    setFormData({
-      type: "",
-      location: "",
-      description: "",
-      idNumber: "",
-      phone: "",
-      priority: "medium",
-    });
-
-    setIsSubmitting(false);
   };
 
   return (
@@ -264,6 +338,43 @@ const ComplaintForm: React.FC = () => {
                 </div>
               </motion.div>
 
+              <motion.div variants={fadeInUp}>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  صور داعمة (اختياري، حتى {MAX_FILES} صور)
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotosChange}
+                  className="block w-full text-sm file:mr-4 file:rounded-xl file:border-0 file:px-4 file:py-2 file:bg-rose-600 file:text-white hover:file:brightness-110"
+                />
+                {previews.length > 0 && (
+                  <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {previews.map((src, i) => (
+                      <div key={i} className="relative group">
+                        <img
+                          src={src}
+                          alt={`preview-${i}`}
+                          className="h-28 w-full object-cover rounded-xl ring-1 ring-slate-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removePhotoAt(i)}
+                          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition text-xs bg-black/60 text-white px-2 py-1 rounded"
+                        >
+                          إزالة
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="mt-2 text-xs text-slate-500">
+                  يُسمح بصيغ الصور فقط. الحد الأقصى {MAX_FILES} صور،{" "}
+                  {MAX_SIZE_MB}MB لكل صورة.
+                </p>
+              </motion.div>
+
               {/* Personal Information */}
               <motion.div
                 variants={fadeInUp}
@@ -271,18 +382,18 @@ const ComplaintForm: React.FC = () => {
               >
                 <div>
                   <label
-                    htmlFor="idNumber"
+                    htmlFor="fullName"
                     className="block text-sm font-medium text-slate-700 mb-2"
                   >
-                    <FaIdCard className="inline h-4 w-4 ml-1" /> رقم الهوية *
+                    <FaIdCard className="inline h-4 w-4 ml-1" /> الاسم الكامل *
                   </label>
                   <input
                     type="text"
-                    id="idNumber"
-                    name="idNumber"
-                    value={formData.idNumber}
+                    id="fullName"
+                    name="fullName"
+                    value={formData.fullName}
                     onChange={handleInputChange}
-                    placeholder="1234567890"
+                    placeholder="الاسم الثلاثي"
                     required
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
                   />

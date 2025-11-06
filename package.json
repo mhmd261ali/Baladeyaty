@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@netlify/functions": "^5.0.1",
     "@sanity/client": "^7.11.2",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.344.0",

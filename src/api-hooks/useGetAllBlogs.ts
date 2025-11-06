@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import { BlogType } from "@/types";
-import { client } from "@/lib/sanityClient";
+import { Info } from "../types";
+import { client } from "../lib/sanityClient";
 
-export default function useGetAllBlogs(search: string, selectedTag: string) {
-  const [blogs, setBlogs] = useState<BlogType[]>([]);
+export default function useGetAllInfo(
+  search: string,
+  selectedCategory: string
+) {
+  const [infoList, setInfoList] = useState<Info[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -13,48 +16,72 @@ export default function useGetAllBlogs(search: string, selectedTag: string) {
 
     client
       .fetch(
-        `*[_type == "blogs" && title match $search && (category == $selectedTag || $selectedTag == "")]{
+        `*[
+          _type == "Info" &&
+          title match $search &&
+          (info_category == $selectedCategory || $selectedCategory == "")
+        ]{
           _id,
+          _type,
           title,
-          category,
           description,
-          "image": image.asset->url,
-          date,
-          content
-        }`,
+          info_category,
+          info_status,
+          info_date,
+          image{
+            alt,
+            asset->{
+              url
+            }
+          },
+          document{
+            asset->{
+              url
+            }
+          }
+        } | order(info_date desc)`,
         {
           search: `*${search}*`,
-          selectedTag,
+          selectedCategory,
         }
       )
-      .then((data) => {
-        const blogs = data.map(
-          (blog: {
-            title: string;
-            category: string;
-            description: string;
-            image: string;
-            date: string;
-            _id: string;
-          }) => ({
-            title: blog.title,
-            category: blog.category,
-            description: blog.description,
-            image: blog.image,
-            date: blog.date,
-            id: blog._id,
-          })
-        );
+      .then((data: any[]) => {
+        const mapped: Info[] = data.map((d) => ({
+          _id: d._id,
+          _type: "Info",
+          title: d.title,
+          description: d.description,
+          info_category: d.info_category,
+          info_status: d.info_status,
+          info_date: d.info_date,
+          // keep raw structured fields (useful if you later use @sanity/image-url)
+          image: d.image?.asset?._ref
+            ? {
+                _type: "image",
+                asset: { _ref: d.image.asset._ref, _type: "reference" },
+                alt: d.image?.alt,
+              }
+            : undefined,
+          document: d.document?.asset?._ref
+            ? {
+                _type: "file",
+                asset: { _ref: d.document.asset._ref, _type: "reference" },
+              }
+            : undefined,
+          // convenience URLs for the UI
+          imageUrl: d.image?.asset?.url,
+          imageAlt: d.image?.alt,
+          documentUrl: d.document?.asset?.url,
+        }));
 
-        setBlogs(blogs);
-        console.log(blogs);
+        setInfoList(mapped);
         setLoading(false);
       })
       .catch(() => {
-        setError("Failed to fetch blogs");
+        setError("Failed to fetch info documents");
         setLoading(false);
       });
-  }, [search, selectedTag]);
+  }, [search, selectedCategory]);
 
-  return { blogs, loading, error };
+  return { infoList, loading, error };
 }

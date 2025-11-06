@@ -4,6 +4,6 @@ export const client = createClient({
   projectId: "avx2zuog",
   dataset: "complaints",
   token:
-    "skuIuGxmkqO7uobWDBcF7jNxDukxZo5pjAm1c78mQgNkY5iwRMEVVpfI2hDysxUkffNlpCYw8Hx5lw0wg1e4WHSbczqFjThhPrIjtkEy039ZWdTfwJGkPtTrNNCL5vJKRjsqgwonvLCBtNl2eDsUOZ634101nUmmVFqYQueIkhLhjDAfIFAI",
+    "sklBNMJzsbY93GY9LMcnH6gzrgfjQrURu3ImeZLKWLNlwksOx5ealG8IC1pSyKOZoYB7kkpOkVP8KNYG7CtpSm62JL4WFJivhhGWrnT6DMVQJ7B7DrxnIlx9MfY3S2vpyEjvrNQmFcu9VuL7H3L7Yb16hZ95YRPDmRo0unL4karLA74yEgfu",
   useCdn: true,
 });

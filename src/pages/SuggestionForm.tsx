@@ -10,15 +10,24 @@ import {
 } from "lucide-react";
 import { motion, Variants } from "framer-motion";
 import toast from "react-hot-toast";
+import { client } from "../lib/sanityClient";
 
 interface SuggestionData {
-  title: string;
-  category: string;
-  description: string;
-  name: string;
-  phone: string;
-  email: string;
+  title: string; // maps to Sanity: suggestion
+  category: string; // maps to Sanity: suggestion_category
+  description: string; // maps to Sanity: suggestion_description
+  name: string; // maps to Sanity: suggestion_person_name
+  phone: string; // maps to Sanity: suggestion_person_nbr
+  email: string; // maps to Sanity: suggestion_person_email
 }
+
+// Optional: type the API response
+type SuggestionApiResponse = { id: string; status: "created" };
+
+// Configure your API base if you're not on Netlify (leave as default otherwise)
+const SUGGESTION_API =
+  import.meta.env.VITE_SUGGESTION_API_ENDPOINT ||
+  "/.netlify/functions/suggestions";
 
 // Motion variants (typed + tween-based for TS safety)
 const fadeInUp: Variants = {
@@ -78,6 +87,7 @@ const SuggestionForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Required fields
     if (
       !formData.title ||
       !formData.category ||
@@ -89,31 +99,58 @@ const SuggestionForm: React.FC = () => {
       return;
     }
 
+    // Basic validations
+    const validPhone = (v: string) =>
+      /^(\+?\d{7,15})$/.test(v.replace(/\s|-/g, ""));
+    const validEmail = (v: string) =>
+      !v || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+
     if (!validPhone(formData.phone)) {
       toast.error("صيغة رقم الهاتف غير صحيحة");
       return;
     }
-
     if (!validEmail(formData.email)) {
       toast.error("صيغة البريد الإلكتروني غير صحيحة");
       return;
     }
 
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    const suggestionId = `SUGG-${Date.now()}`;
-    toast.success(`تم تقديم المقترح بنجاح. رقم المقترح: ${suggestionId}`);
+    try {
+      // Map to Sanity fields
+      const payload = {
+        _type: "Suggestion", // so your serverless function can create the right doc type
+        suggestion: formData.title,
+        suggestion_date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
+        suggestion_category: formData.category,
+        suggestion_description: formData.description,
+        suggestion_person_name: formData.name,
+        suggestion_person_nbr: formData.phone,
+        suggestion_person_email: formData.email,
+      };
 
-    setFormData({
-      title: "",
-      category: "",
-      description: "",
-      name: "",
-      phone: "",
-      email: "",
-    });
-    setIsSubmitting(false);
+      const created = await client.create(payload);
+      console.log("Created complaint:", created); // should contain _id, _type, _rev
+
+      toast.success(
+        `تم تقديم الشكوى بنجاح. رقم الشكوى: ${formData.title} (ID: ${created._id})`
+      );
+
+      // reset
+      setFormData({
+        title: "",
+        category: "",
+        description: "",
+        name: "",
+        phone: "",
+        email: "",
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("حدث خطأ أثناء إرسال المقترح. حاول مرة أخرى.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
