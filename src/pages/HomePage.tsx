@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   MessageSquare,
@@ -12,6 +12,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { motion, Variants } from "framer-motion";
+import useGetAllInfo from "../api-hooks/useGetAllBlogs";
+import type { Info } from "../types";
 
 const container: Variants = {
   hidden: { opacity: 0 },
@@ -41,6 +43,16 @@ const item: Variants = {
 };
 
 const HomePage: React.FC = () => {
+  const INFO_PREVIEW_LIMIT = 3; // 👈 change this number as you like
+
+  // Simple fetch: no search, all categories
+  const { infoList, loading, error } = useGetAllInfo("", "");
+
+  // Take only the first N infos
+  const latestInfos = useMemo(
+    () => (infoList as Info[]).slice(0, INFO_PREVIEW_LIMIT),
+    [infoList]
+  );
   const services = [
     {
       icon: MessageSquare,
@@ -361,6 +373,92 @@ const HomePage: React.FC = () => {
               </div>
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      <section className="py-12 md:py-16 bg-white/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
+            <div>
+              <h2 className="text-3xl font-bold">آخر التعاميم والمشاريع</h2>
+              <p className="mt-2 text-slate-600">
+                نظرة سريعة على أحدث المعلومات المنشورة في المنصّة.
+              </p>
+            </div>
+
+            <Link
+              to="/info"
+              className="inline-flex items-center gap-2 rounded-2xl bg-sky-600 text-white px-5 py-2.5 text-sm font-semibold shadow hover:bg-sky-700 transition"
+            >
+              الانتقال إلى صفحة التعاميم والمشاريع
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {loading && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[...Array(INFO_PREVIEW_LIMIT)].map((_, i) => (
+                <div
+                  key={i}
+                  className="rounded-2xl bg-white border border-slate-200 p-4 animate-pulse"
+                >
+                  <div className="h-4 w-24 bg-slate-200 rounded mb-3" />
+                  <div className="h-5 w-3/4 bg-slate-200 rounded mb-2" />
+                  <div className="h-4 w-full bg-slate-200 rounded mb-1" />
+                  <div className="h-4 w-5/6 bg-slate-200 rounded" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {error && !loading && (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700 text-sm">
+              حدث خطأ أثناء جلب المعلومات، يُرجى المحاولة لاحقًا.
+            </div>
+          )}
+
+          {!loading && !error && latestInfos.length === 0 && (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-600 text-sm">
+              لا توجد تعاميم أو مشاريع منشورة حتى الآن.
+            </div>
+          )}
+
+          {!loading && !error && latestInfos.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {latestInfos.map((info) => (
+                <div
+                  key={info._id}
+                  className="flex flex-col justify-between rounded-2xl bg-white border border-slate-200 p-5 shadow-sm hover:shadow-md transition"
+                >
+                  <div>
+                    {info.info_category && (
+                      <span className="inline-flex items-center rounded-full bg-sky-50 text-sky-700 text-xs font-medium px-3 py-1 mb-3">
+                        {info.info_category}
+                      </span>
+                    )}
+                    <h3 className="text-lg font-bold mb-2 line-clamp-2">
+                      {info.title}
+                    </h3>
+                    {info.description && (
+                      <p className="text-sm text-slate-600 line-clamp-3">
+                        {info.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="mt-4 flex justify-end">
+                    <Link
+                      to="/info"
+                      className="text-xs font-semibold text-sky-700 hover:text-sky-900 inline-flex items-center gap-1"
+                    >
+                      عرض كل التفاصيل في صفحة التعاميم
+                      <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

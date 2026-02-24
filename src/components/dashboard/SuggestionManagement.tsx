@@ -1,205 +1,104 @@
-import React, { useState } from 'react';
-import { 
-  Search, 
-  Eye, 
-  ThumbsUp, 
-  ThumbsDown, 
-  Clock, 
-  CheckCircle, 
+import React, { useMemo, useState } from "react";
+import {
+  Search,
+  Eye,
+  ThumbsUp,
+  ThumbsDown,
+  Clock,
+  CheckCircle,
   XCircle,
   Calendar,
   User,
   Lightbulb,
-  TrendingUp
-} from 'lucide-react';
-import toast from 'react-hot-toast';
+} from "lucide-react";
+import toast from "react-hot-toast";
 
-interface Suggestion {
-  id: string;
-  title: string;
-  category: string;
-  description: string;
-  status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'implemented';
-  submittedBy: string;
-  phone: string;
-  email?: string;
-  date: string;
-  votes: number;
-  notes?: string;
-  reviewedBy?: string;
-}
+import useGetAllSuggestions, {
+  Suggestion as SanitySuggestion,
+} from "../../api-hooks/useGetAllSuggestions";
+// If your hook doesn't export the type, you can:
+// import useGetAllSuggestions from "../../hooks/useGetAllSuggestions";
 
 const SuggestionManagement = () => {
-  const [suggestions] = useState<Suggestion[]>([
-    {
-      id: 'SUGG-001',
-      title: 'إنشاء حديقة للأطفال في حي النخيل',
-      category: 'البنية التحتية',
-      description: 'اقتراح إنشاء حديقة مخصصة للأطفال مع ألعاب آمنة ومناطق جلوس للعائلات',
-      status: 'under_review',
-      submittedBy: 'سارة أحمد',
-      phone: '0501234567',
-      email: 'sara@email.com',
-      date: '2025-01-14',
-      votes: 45,
-    },
-    {
-      id: 'SUGG-002',
-      title: 'تطبيق للتبليغ عن المشاكل',
-      category: 'الخدمات الرقمية',
-      description: 'تطوير تطبيق محمول لتسهيل التبليغ عن المشاكل وتتبع حالة الشكاوى',
-      status: 'approved',
-      submittedBy: 'محمد عبدالله',
-      phone: '0507654321',
-      date: '2025-01-12',
-      votes: 23,
-      reviewedBy: 'أحمد المدير',
-      notes: 'مقترح ممتاز، سيتم البدء في التنفيذ'
-    },
-    {
-      id: 'SUGG-003',
-      title: 'تحسين الإضاءة في الشوارع الفرعية',
-      category: 'الأمن والسلامة',
-      description: 'زيادة عدد أعمدة الإضاءة في الشوارع الفرعية لتحسين الأمان',
-      status: 'implemented',
-      submittedBy: 'فاطمة سعد',
-      phone: '0559876543',
-      date: '2025-01-10',
-      votes: 67,
-      reviewedBy: 'أحمد المدير',
-      notes: 'تم التنفيذ بنجاح'
-    },
-    {
-      id: 'SUGG-004',
-      title: 'إقامة فعاليات ترفيهية شهرية',
-      category: 'الترفيه والثقافة',
-      description: 'تنظيم فعاليات ترفيهية وثقافية شهرية لجميع أفراد المجتمع',
-      status: 'pending',
-      submittedBy: 'عبدالرحمن محمد',
-      phone: '0512345678',
-      date: '2025-01-08',
-      votes: 12,
-    }
-  ]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [selectedSuggestion, setSelectedSuggestion] = useState<Suggestion | null>(null);
+  const [selectedSuggestion, setSelectedSuggestion] =
+    useState<SanitySuggestion | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  const categories = [
-    'البنية التحتية',
-    'الخدمات الرقمية',
-    'الأمن والسلامة',
-    'الترفيه والثقافة',
-    'البيئة والنظافة',
-    'النقل والمواصلات'
-  ];
+  // ✅ fetch real data from Sanity (search + category)
+  const selectedCategory = categoryFilter === "all" ? "" : categoryFilter;
+  const {
+    suggestionList: suggestions,
+    loading,
+    error,
+  } = useGetAllSuggestions(searchTerm, selectedCategory);
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Clock className="h-4 w-4" />;
-      case 'under_review':
-        return <Eye className="h-4 w-4" />;
-      case 'approved':
-        return <CheckCircle className="h-4 w-4" />;
-      case 'rejected':
-        return <XCircle className="h-4 w-4" />;
-      case 'implemented':
-        return <CheckCircle className="h-4 w-4" />;
-      default:
-        return <Clock className="h-4 w-4" />;
+  // ✅ categories from real data (fallback if empty)
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of suggestions) {
+      if (s.suggestion_category) set.add(s.suggestion_category);
     }
+    const arr = Array.from(set);
+    return arr.length
+      ? arr
+      : [
+          "البنية التحتية",
+          "الخدمات الرقمية",
+          "الأمن والسلامة",
+          "الترفيه والثقافة",
+          "البيئة والنظافة",
+          "النقل والمواصلات",
+        ];
+  }, [suggestions]);
+
+  // ⚠️ Your Suggestion schema currently has NO status, votes, reviewedBy, notes.
+  // We'll show "جديد" as a default status.
+  const getStatusIcon = () => <Clock className="h-4 w-4" />;
+  const getStatusLabel = () => "جديد";
+  const getStatusColor = () => "bg-purple-100 text-purple-800";
+
+  // Since we don't have status in schema, these cards become:
+  const total = suggestions.length;
+
+  const handleStatusChange = (
+    _suggestionId: string,
+    _action: "approved" | "rejected",
+  ) => {
+    // No status field in schema => can't really update status in Sanity from here.
+    toast("لا يمكن تغيير الحالة حالياً لأن حقل الحالة غير موجود في Sanity.", {
+      icon: "ℹ️",
+    });
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'قيد الانتظار';
-      case 'under_review':
-        return 'قيد المراجعة';
-      case 'approved':
-        return 'موافق عليه';
-      case 'rejected':
-        return 'مرفوض';
-      case 'implemented':
-        return 'منفذ';
-      default:
-        return status;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-gray-100 text-gray-800';
-      case 'under_review':
-        return 'bg-blue-100 text-blue-800';
-      case 'approved':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'implemented':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const filteredSuggestions = suggestions.filter(suggestion => {
-    const matchesSearch = suggestion.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         suggestion.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         suggestion.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || suggestion.status === statusFilter;
-    const matchesCategory = categoryFilter === 'all' || suggestion.category === categoryFilter;
-    
-    return matchesSearch && matchesStatus && matchesCategory;
-  });
-
-  const handleStatusChange = (suggestionId: string, newStatus: string) => {
-    // In a real app, this would make an API call
-    toast.success(`تم تحديث حالة المقترح ${suggestionId} إلى ${getStatusLabel(newStatus)}`);
-  };
+  const formatDate = (iso?: string) => (iso ? iso : "-");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir="rtl">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">إدارة المقترحات</h1>
           <p className="text-gray-600 mt-1">
-            إجمالي المقترحات: {suggestions.length} | المعلقة: {suggestions.filter(s => s.status === 'pending').length}
+            {loading ? "جاري التحميل..." : `إجمالي المقترحات: ${total}`}
           </p>
+          {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards (real but limited by schema) */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="flex items-center">
-            <div className="bg-gray-100 p-2 rounded-lg">
-              <Clock className="h-5 w-5 text-gray-600" />
+            <div className="bg-purple-100 p-2 rounded-lg">
+              <Clock className="h-5 w-5 text-purple-600" />
             </div>
             <div className="mr-3">
-              <p className="text-sm font-medium text-gray-600">قيد الانتظار</p>
+              <p className="text-sm font-medium text-gray-600">المقترحات</p>
               <p className="text-lg font-bold text-gray-900">
-                {suggestions.filter(s => s.status === 'pending').length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <div className="flex items-center">
-            <div className="bg-blue-100 p-2 rounded-lg">
-              <Eye className="h-5 w-5 text-blue-600" />
-            </div>
-            <div className="mr-3">
-              <p className="text-sm font-medium text-gray-600">قيد المراجعة</p>
-              <p className="text-lg font-bold text-gray-900">
-                {suggestions.filter(s => s.status === 'under_review').length}
+                {loading ? "..." : total}
               </p>
             </div>
           </div>
@@ -208,12 +107,12 @@ const SuggestionManagement = () => {
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="flex items-center">
             <div className="bg-green-100 p-2 rounded-lg">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              <Lightbulb className="h-5 w-5 text-green-600" />
             </div>
             <div className="mr-3">
-              <p className="text-sm font-medium text-gray-600">موافق عليها</p>
+              <p className="text-sm font-medium text-gray-600">الفئات</p>
               <p className="text-lg font-bold text-gray-900">
-                {suggestions.filter(s => s.status === 'approved').length}
+                {loading ? "..." : categories.length}
               </p>
             </div>
           </div>
@@ -221,13 +120,35 @@ const SuggestionManagement = () => {
 
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="flex items-center">
-            <div className="bg-purple-100 p-2 rounded-lg">
-              <CheckCircle className="h-5 w-5 text-purple-600" />
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <User className="h-5 w-5 text-blue-600" />
             </div>
             <div className="mr-3">
-              <p className="text-sm font-medium text-gray-600">منفذة</p>
+              <p className="text-sm font-medium text-gray-600">
+                مرسلو المقترحات
+              </p>
               <p className="text-lg font-bold text-gray-900">
-                {suggestions.filter(s => s.status === 'implemented').length}
+                {loading
+                  ? "..."
+                  : new Set(
+                      suggestions
+                        .map((s) => s.suggestion_person_name || "")
+                        .filter(Boolean),
+                    ).size}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <div className="flex items-center">
+            <div className="bg-gray-100 p-2 rounded-lg">
+              <Calendar className="h-5 w-5 text-gray-600" />
+            </div>
+            <div className="mr-3">
+              <p className="text-sm font-medium text-gray-600">الأحدث</p>
+              <p className="text-lg font-bold text-gray-900">
+                {loading ? "..." : formatDate(suggestions[0]?.suggestion_date)}
               </p>
             </div>
           </div>
@@ -236,7 +157,7 @@ const SuggestionManagement = () => {
 
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Search */}
           <div className="relative">
             <Search className="absolute right-3 top-3 h-5 w-5 text-gray-400" />
@@ -248,20 +169,6 @@ const SuggestionManagement = () => {
               className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
             />
           </div>
-
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-          >
-            <option value="all">جميع الحالات</option>
-            <option value="pending">قيد الانتظار</option>
-            <option value="under_review">قيد المراجعة</option>
-            <option value="approved">موافق عليها</option>
-            <option value="rejected">مرفوضة</option>
-            <option value="implemented">منفذة</option>
-          </select>
 
           {/* Category Filter */}
           <select
@@ -282,93 +189,111 @@ const SuggestionManagement = () => {
       {/* Suggestions List */}
       <div className="bg-white rounded-lg shadow-md">
         <div className="divide-y divide-gray-200">
-          {filteredSuggestions.map((suggestion) => (
-            <div key={suggestion.id} className="p-6 hover:bg-gray-50 transition-colors duration-200">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 rtl:space-x-reverse mb-2">
-                    <span className="text-sm font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      {suggestion.id}
-                    </span>
-                    <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium">
-                      {suggestion.category}
-                    </span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 rtl:space-x-reverse ${getStatusColor(suggestion.status)}`}>
-                      {getStatusIcon(suggestion.status)}
-                      <span>{getStatusLabel(suggestion.status)}</span>
-                    </span>
+          {loading && suggestions.length === 0 ? (
+            <div className="p-12 text-center text-gray-600">
+              جاري تحميل المقترحات...
+            </div>
+          ) : (
+            suggestions.map((suggestion) => (
+              <div
+                key={suggestion._id}
+                className="p-6 hover:bg-gray-50 transition-colors duration-200"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-3 rtl:space-x-reverse mb-2">
+                      <span className="text-sm font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        {suggestion._id.slice(0, 8)}
+                      </span>
+
+                      <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium">
+                        {suggestion.suggestion_category || "—"}
+                      </span>
+
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 rtl:space-x-reverse ${getStatusColor()}`}
+                      >
+                        {getStatusIcon()}
+                        <span>{getStatusLabel()}</span>
+                      </span>
+                    </div>
+
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1 truncate">
+                      {suggestion.suggestion || "—"}
+                    </h3>
+
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                      {suggestion.suggestion_description || "—"}
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-gray-500">
+                      <div className="flex items-center">
+                        <User className="h-3 w-3 ml-1" />
+                        {suggestion.suggestion_person_name || "—"}
+                      </div>
+                      <div className="flex items-center">
+                        <Calendar className="h-3 w-3 ml-1" />
+                        {formatDate(suggestion.suggestion_date)}
+                      </div>
+                      <div className="flex items-center">
+                        <User className="h-3 w-3 ml-1" />
+                        {suggestion.suggestion_person_nbr || "—"}
+                      </div>
+                    </div>
+
+                    {suggestion.suggestion_person_email && (
+                      <div className="mt-2 text-xs text-gray-600">
+                        البريد: {suggestion.suggestion_person_email}
+                      </div>
+                    )}
                   </div>
 
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                    {suggestion.title}
-                  </h3>
-                  
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                    {suggestion.description}
-                  </p>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-gray-500">
-                    <div className="flex items-center">
-                      <User className="h-3 w-3 ml-1" />
-                      {suggestion.submittedBy}
-                    </div>
-                    <div className="flex items-center">
-                      <Calendar className="h-3 w-3 ml-1" />
-                      {suggestion.date}
-                    </div>
-                    <div className="flex items-center">
-                      <TrendingUp className="h-3 w-3 ml-1" />
-                      {suggestion.votes} تصويت
-                    </div>
-                  </div>
-
-                  {suggestion.reviewedBy && (
-                    <div className="mt-2 text-xs text-green-600">
-                      تمت المراجعة بواسطة: {suggestion.reviewedBy}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                  <button
-                    onClick={() => {
-                      setSelectedSuggestion(suggestion);
-                      setIsDetailModalOpen(true);
-                    }}
-                    className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors duration-200"
-                    title="عرض التفاصيل"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </button>
-                  
-                  <div className="flex space-x-1 rtl:space-x-reverse">
+                  <div className="flex items-center space-x-2 rtl:space-x-reverse">
                     <button
-                      onClick={() => handleStatusChange(suggestion.id, 'approved')}
-                      className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors duration-200"
-                      title="الموافقة"
-                      disabled={suggestion.status === 'approved' || suggestion.status === 'implemented'}
+                      onClick={() => {
+                        setSelectedSuggestion(suggestion);
+                        setIsDetailModalOpen(true);
+                      }}
+                      className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors duration-200"
+                      title="عرض التفاصيل"
                     >
-                      <ThumbsUp className="h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                     </button>
-                    <button
-                      onClick={() => handleStatusChange(suggestion.id, 'rejected')}
-                      className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors duration-200"
-                      title="الرفض"
-                      disabled={suggestion.status === 'rejected'}
-                    >
-                      <ThumbsDown className="h-4 w-4" />
-                    </button>
+
+                    {/* These buttons remain but won't actually update without a status field */}
+                    <div className="flex space-x-1 rtl:space-x-reverse">
+                      <button
+                        onClick={() =>
+                          handleStatusChange(suggestion._id, "approved")
+                        }
+                        className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors duration-200"
+                        title="الموافقة"
+                      >
+                        <ThumbsUp className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleStatusChange(suggestion._id, "rejected")
+                        }
+                        className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors duration-200"
+                        title="الرفض"
+                      >
+                        <ThumbsDown className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
-        {filteredSuggestions.length === 0 && (
+        {!loading && suggestions.length === 0 && (
           <div className="p-12 text-center">
             <Lightbulb className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد مقترحات</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              لا توجد مقترحات
+            </h3>
             <p className="text-gray-600">
               لا توجد مقترحات تطابق معايير البحث الحالية
             </p>
@@ -384,20 +309,23 @@ const SuggestionManagement = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">
-                    تفاصيل المقترح {selectedSuggestion.id}
+                    تفاصيل المقترح {selectedSuggestion._id.slice(0, 8)}
                   </h2>
                   <div className="flex items-center space-x-2 rtl:space-x-reverse mt-2">
                     <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-medium">
-                      {selectedSuggestion.category}
+                      {selectedSuggestion.suggestion_category || "—"}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedSuggestion.status)}`}>
-                      {getStatusLabel(selectedSuggestion.status)}
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor()}`}
+                    >
+                      {getStatusLabel()}
                     </span>
                   </div>
                 </div>
                 <button
                   onClick={() => setIsDetailModalOpen(false)}
                   className="text-gray-400 hover:text-gray-600 text-2xl"
+                  aria-label="إغلاق"
                 >
                   ×
                 </button>
@@ -407,75 +335,72 @@ const SuggestionManagement = () => {
             <div className="p-6 space-y-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {selectedSuggestion.title}
+                  {selectedSuggestion.suggestion || "—"}
                 </h3>
                 <p className="text-gray-600 leading-relaxed">
-                  {selectedSuggestion.description}
+                  {selectedSuggestion.suggestion_description || "—"}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">معلومات المقترح</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    معلومات المقترح
+                  </h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex">
-                      <span className="font-medium text-gray-600 w-24">الفئة:</span>
-                      <span>{selectedSuggestion.category}</span>
+                      <span className="font-medium text-gray-600 w-28">
+                        الفئة:
+                      </span>
+                      <span>
+                        {selectedSuggestion.suggestion_category || "—"}
+                      </span>
                     </div>
                     <div className="flex">
-                      <span className="font-medium text-gray-600 w-24">التاريخ:</span>
-                      <span>{selectedSuggestion.date}</span>
-                    </div>
-                    <div className="flex">
-                      <span className="font-medium text-gray-600 w-24">التصويت:</span>
-                      <span className="flex items-center">
-                        <TrendingUp className="h-4 w-4 text-green-500 ml-1" />
-                        {selectedSuggestion.votes}
+                      <span className="font-medium text-gray-600 w-28">
+                        التاريخ:
+                      </span>
+                      <span>
+                        {formatDate(selectedSuggestion.suggestion_date)}
                       </span>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">معلومات المقترح</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    معلومات المُرسل
+                  </h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex">
-                      <span className="font-medium text-gray-600 w-24">الاسم:</span>
-                      <span>{selectedSuggestion.submittedBy}</span>
+                      <span className="font-medium text-gray-600 w-28">
+                        الاسم:
+                      </span>
+                      <span>
+                        {selectedSuggestion.suggestion_person_name || "—"}
+                      </span>
                     </div>
                     <div className="flex">
-                      <span className="font-medium text-gray-600 w-24">الهاتف:</span>
-                      <span>{selectedSuggestion.phone}</span>
+                      <span className="font-medium text-gray-600 w-28">
+                        الهاتف:
+                      </span>
+                      <span>
+                        {selectedSuggestion.suggestion_person_nbr || "—"}
+                      </span>
                     </div>
-                    {selectedSuggestion.email && (
+                    {selectedSuggestion.suggestion_person_email && (
                       <div className="flex">
-                        <span className="font-medium text-gray-600 w-24">البريد:</span>
-                        <span>{selectedSuggestion.email}</span>
+                        <span className="font-medium text-gray-600 w-28">
+                          البريد:
+                        </span>
+                        <span>
+                          {selectedSuggestion.suggestion_person_email}
+                        </span>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
-
-              {selectedSuggestion.reviewedBy && (
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">معلومات المراجعة</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex">
-                      <span className="font-medium text-gray-600 w-24">المراجع:</span>
-                      <span>{selectedSuggestion.reviewedBy}</span>
-                    </div>
-                    {selectedSuggestion.notes && (
-                      <div>
-                        <span className="font-medium text-gray-600">الملاحظات:</span>
-                        <p className="mt-1 text-gray-600 bg-gray-50 p-3 rounded">
-                          {selectedSuggestion.notes}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
 
               <div className="flex justify-end space-x-3 rtl:space-x-reverse pt-4 border-t border-gray-200">
                 <button
@@ -484,20 +409,30 @@ const SuggestionManagement = () => {
                 >
                   إغلاق
                 </button>
+
+                {/* Buttons stay as "UI only" until you add a status field */}
                 <button
-                  onClick={() => handleStatusChange(selectedSuggestion.id, 'approved')}
+                  onClick={() =>
+                    handleStatusChange(selectedSuggestion._id, "approved")
+                  }
                   className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-200"
-                  disabled={selectedSuggestion.status === 'approved' || selectedSuggestion.status === 'implemented'}
                 >
                   الموافقة
                 </button>
                 <button
-                  onClick={() => handleStatusChange(selectedSuggestion.id, 'rejected')}
+                  onClick={() =>
+                    handleStatusChange(selectedSuggestion._id, "rejected")
+                  }
                   className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-200"
-                  disabled={selectedSuggestion.status === 'rejected'}
                 >
                   الرفض
                 </button>
+              </div>
+
+              <div className="text-xs text-gray-500">
+                ملاحظة: لتفعيل تغيير الحالة (موافق/مرفوض) يجب إضافة حقل{" "}
+                <span className="font-mono">suggestion_status</span> في Sanity
+                ثم تنفيذ تحديث (patch) للوثيقة.
               </div>
             </div>
           </div>

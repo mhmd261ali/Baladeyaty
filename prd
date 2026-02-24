@@ -1,0 +1,133 @@
+{
+  "Extern": [
+    {
+      "applicatie": "rwsverkeersinfo",
+      "urls": [
+        "rwsverkeersinfo.nl"
+      ]
+    },
+    {
+      "applicatie": "bergerselect.rws.nl",
+      "urls": [
+        "bergerselect.rws.nl"
+      ]
+    },
+    {
+      "applicatie": "sorareg",
+      "urls": [
+        "onderwaterobjecten.rws.nl/",
+        "onderwaterobjecten.rws.nl/api"
+      ]
+    },
+    {
+      "applicatie": "wkp",
+      "urls": [
+        "waterkwaliteitsportaal.nl"
+      ]
+    },
+    {
+      "applicatie": "wvp",
+      "urls": [
+        "wvp.nl"
+      ]
+    },
+    {
+      "applicatie": "onderwaterprojecten",
+      "urls": [
+        "onderwaterobjecten.rws.nl"
+      ]
+    },
+    {
+      "applicatie": "enc",
+      "urls": [
+        "port-enc.rws.nl"
+      ]
+    },
+    {
+      "applicatie": "aquo-kit",
+      "urls": [
+        "aquo-kit.nl"
+      ]
+    },
+    {
+      "applicatie": "keycloak urls's",
+      "urls": [
+        "keycloak-ext.k8s.otg.cnap-am4.intranet.rws.nl/"
+      ]
+    }
+  ],
+  "Intern": [
+    {
+      "applicatie": "sorareg",
+      "urls": [
+        "sonarregui.apps.cnap-am2.intranet.rws.nl"
+      ]
+    },
+    {
+      "applicatie": "age portals",
+      "urls": [
+        "https://age.intranet.rijkswaterstaat.nl/portal/"
+      ]
+    },
+    {
+      "applicatie": "fme servers",
+      "urls": [
+        "https://fmeflow.intranet.rijkswaterstaat.nl/fmeserver/"
+      ]
+    },
+    {
+      "applicatie": "fme 21",
+      "urls": [
+        "https://fme2021.intranet.rws.nl/fmeserver/"
+      ]
+    },
+    {
+      "applicatie": "geoweb servers (incl mod)",
+      "urls": [
+        "https://geo.intranet.rijkswaterstaat.nl/services/ogc/brk/web/?0"
+      ]
+    },
+    {
+      "applicatie": "wkp",
+      "urls": [
+        "wkp.intranet.rws.nl"
+      ]
+    },
+    {
+      "applicatie": "p8",
+      "urls": [
+        "p8.intranet.rws.nl",
+        "conversie-p8.intranet.rws.nl",
+        "proef-p8.intranet.rws.nl",
+        "p8.k8s.otg.cnap-am4.intranet.rws.nl",
+        "p8-conv.k8s.otg.cnap-am4.intranet.rws.nl",
+        "p8-proef.k8s.otg.cnap-am4.intranet.rws.nl"
+      ]
+    },
+    {
+      "applicatie": "otggate",
+      "urls": [
+        "otggate.rws.nl"
+      ]
+    },
+    {
+      "applicatie": "mip",
+      "urls": [
+        "mip.apps.cnap-am2.intranet.rws.nl/index2.html"
+      ]
+    },
+    {
+      "applicatie": "cf",
+      "urls": [
+        "https://apps.system.cnap-am2.intranet.rws.nl",
+        "https://login.system.cnap-am2.intranet.rws.nl/"
+      ]
+    },
+    {
+      "applicatie": "Keykloak URL's",
+      "urls": [
+        "keycloak.k8s.otg.cnap-am4.intranet.rws.nl/"
+      ]
+    }
+  ]
+}

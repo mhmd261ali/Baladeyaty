@@ -1,0 +1,24 @@
+{
+  "Extern": [],
+  "Intern": [
+    {
+      "applicatie": "age portals",
+      "urls": [
+        "https://acc-age.intranet.rijkswaterstaat.nl/portal/"
+      ]
+    },
+    {
+      "applicatie": "fme servers",
+      "urls": [
+        "https://ont-fmeflow.intranet.rijkswaterstaat.nl/fmeserver/"
+      ]
+    },
+    {
+      "applicatie": "p8",
+      "urls": [
+        "ont-p8.intranet.rws.nl",
+        "p8-o.k8s.otg.cnap-am4.intranet.rws.nl"
+      ]
+    }
+  ]
+}

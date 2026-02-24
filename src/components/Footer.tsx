@@ -1,5 +1,5 @@
-import React from 'react';
-import { Building2, Phone, Mail, MapPin } from 'lucide-react';
+import React from "react";
+import { Building2, Phone, Mail, MapPin } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -13,8 +13,8 @@ const Footer = () => {
               <span className="text-xl font-bold">بلديتك الذكية</span>
             </div>
             <p className="text-gray-300 leading-relaxed">
-              منصة إلكترونية ذكية لتنظيم العلاقة بين المواطنين والبلدية، 
-              تهدف إلى تحسين الخدمات المحلية وزيادة الشفافية.
+              منصة إلكترونية ذكية لتنظيم العلاقة بين المواطنين والبلدية، تهدف
+              إلى تحسين الخدمات المحلية وزيادة الشفافية.
             </p>
           </div>
 
@@ -24,7 +24,7 @@ const Footer = () => {
             <div className="space-y-3">
               <div className="flex items-center space-x-3 rtl:space-x-reverse">
                 <Phone className="h-5 w-5 text-blue-400" />
-                <span className="text-gray-300">+966 11 123 4567</span>
+                <span className="text-gray-300">+961 123 456</span>
               </div>
               <div className="flex items-center space-x-3 rtl:space-x-reverse">
                 <Mail className="h-5 w-5 text-blue-400" />
@@ -32,10 +32,7 @@ const Footer = () => {
               </div>
               <div className="flex items-start space-x-3 rtl:space-x-reverse">
                 <MapPin className="h-5 w-5 text-blue-400 mt-1" />
-                <span className="text-gray-300">
-                  شارع الملك فهد، الرياض<br />
-                  المملكة العربية السعودية
-                </span>
+                <span className="text-gray-300">الشرقية</span>
               </div>
             </div>
           </div>
@@ -44,16 +41,28 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4">روابط سريعة</h3>
             <div className="space-y-2">
-              <a href="/complaint" className="block text-gray-300 hover:text-blue-400 transition-colors duration-200">
+              <a
+                href="/complaint"
+                className="block text-gray-300 hover:text-blue-400 transition-colors duration-200"
+              >
                 تقديم شكوى
               </a>
-              <a href="/suggestion" className="block text-gray-300 hover:text-blue-400 transition-colors duration-200">
+              <a
+                href="/suggestion"
+                className="block text-gray-300 hover:text-blue-400 transition-colors duration-200"
+              >
                 تقديم مقترح
               </a>
-              <a href="/info" className="block text-gray-300 hover:text-blue-400 transition-colors duration-200">
+              <a
+                href="/info"
+                className="block text-gray-300 hover:text-blue-400 transition-colors duration-200"
+              >
                 التعاميم والمشاريع
               </a>
-              <a href="/login" className="block text-gray-300 hover:text-blue-400 transition-colors duration-200">
+              <a
+                href="/login"
+                className="block text-gray-300 hover:text-blue-400 transition-colors duration-200"
+              >
                 تسجيل الدخول
               </a>
             </div>

@@ -1,0 +1,71 @@
+{
+    "Extern": [
+        {
+            "applicatie": "rwsverkeersinfo",
+            "urls": ["eov.acceptatie.rws.nl","acc-gbvi.rws.nl", "acc-gbviapi.rws.nl","acc-gbvi-backend.rws.nl"]
+        },
+        {
+            "applicatie": "bergerselect.rws.nl",
+            "urls": ["acc-bergerselect.rws.nl"]
+        },
+        {
+            "applicatie": "sorareg",
+            "urls": ["acc-onderwaterobjecten.rws.nl/","acc-onderwaterobjecten.rws.nl/api"]
+        },
+        {
+            "applicatie": "wkp",
+            "urls": ["acc-ddapi-wkp.rws.nl"]
+        },
+        {
+            "applicatie": "onderwaterprojecten",
+            "urls": ["acc-onderwaterobjecten.rws.nl"]
+        },
+        {
+            "applicatie": "aquo-kit",
+            "urls": ["acc.aquo-kit.nl"]
+        }
+
+    ],
+    "Intern": [
+        {
+            "applicatie": "sorareg",
+            "urls": ["sonarregegui-t.apps.cnap-am2-acc.intranet.rws.nl"]
+        },
+        {
+            "applicatie": "age portals",
+            "urls": ["acc-age.intranet.rijkswaterstaat.nl/portal/"]
+        },
+        {
+            "applicatie": "fme servers",
+            "urls": ["https://ont-fmeflow.intranet.rijkswaterstaat.nl/fmeserver/"]
+        },
+        {
+            "applicatie": "geoweb servers (incl mod)",
+            "urls": ["https://acc-geo.intranet.rijkswaterstaat.nl/services/ogc/brk/web/?0"]
+        },
+        {
+            "applicatie": "wkp",
+            "urls": ["acc-ddv3-wkp.k8s.otg.cnap-am4.intranet.rws.nl"]
+        },
+        {
+            "applicatie": "p8",
+            "urls": ["acc-p8.intranet.rws.nl", "p8-a.k8s.otg.cnap-am4.intranet.rws.nl"]
+        },
+        {
+            "applicatie": "otggate",
+            "urls": ["acc-otggate.rws.nl"]
+        },
+        {
+            "applicatie": "mip",
+            "urls": ["mip-acc.apps.cnap-am2-acc.intranet.rws.nl/login.html"]
+        },
+        {
+            "applicatie": "cf",
+            "urls": ["https://apps.system.cnap-am2-acc.intranet.rws.nl", "https://login.system.cnap-am2-acc.intranet.rws.nl/"]
+        },
+        {
+            "applicatie": "Keykloak URL's",
+            "urls": ["keycloak-a.k8s.otg.cnap-am4.intranet.rws.nl/"]
+        }
+    ]
+}
