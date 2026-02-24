@@ -194,6 +194,7 @@ const LoginPage: React.FC = () => {
       toast.success("تم تسجيل الدخول بنجاح");
       navigate(from, { replace: true });
     } else {
+      console.log(password);
       toast.error("بيانات تسجيل الدخول غير صحيحة");
     }
   };
